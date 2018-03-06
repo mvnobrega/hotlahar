@@ -16,10 +16,7 @@ $hotmart_first_name = $_POST['first_name'];
 $hotmart_last_name  = $_POST['last_name'];
 $hotmart_mail       = $_POST['email'];
 $hotmart_prod       = $_POST['prod'];
-
-foreach ($_POST as $key => $value) {
-  $key = $value;
-}
+$hottok             = $_POST['hottok'];
 
 // Log de requisição para análise
 log_message('*** Requisição Hotmautic ***');
