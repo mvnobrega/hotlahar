@@ -1,22 +1,20 @@
 <?php
-
-
 // Informações da LAHAR
-$token_api_lahar = 'TOKEN_API_LAHAR_OBTIDO_EM_CONFIGURACOES'
-$endpoint = 'TIPO_DE_INTEGRACAO'
-$nome_formulario = 'NOME_DO_IDENTIFICADOR_DA_PAGINA'
-
+$token_api_lahar = 'TOKEN_API_LAHAR_OBTIDO_EM_CONFIGURACOES';
+$endpoint = 'TIPO_DE_INTEGRACAO';
+$nome_formulario = 'NOME_DO_IDENTIFICADOR_DA_PAGINA';
 // Insira as informações vinda do Hotmart
 $hotmart_token      = "TOKEN HOTMART";
 $hotmart_id_prod    = "ID Produto Hotmart";
 $hotmart_id_test    = "1439";//1439 é o ID do produto usado para teste de API pelo Hotmart
-
 // Informações recebidas via post do Hotmart
 $hotmart_first_name = $_POST['first_name'];
 $hotmart_last_name  = $_POST['last_name'];
 $hotmart_mail       = $_POST['email'];
 $hotmart_prod       = $_POST['prod'];
+$hotmart_prod_nome  = $_POST['prod_name'];
 $hottok             = $_POST['hottok'];
+$status             = $_POST['status'];
 
 // Log de requisição para análise
 log_message('*** Requisição Hotmautic ***');
@@ -25,30 +23,29 @@ log_message("Sobrenome: $hotmart_last_name");
 log_message("E-mail: $hotmart_mail");
 log_message("Produto: $hotmart_prod");
 log_message("Status: $status");
-
 //Validação das informações e tomada da ação para cada status recebido
-if ($hottok == $hotmart_token && ($hotmart_prod == $hotmart_id_prod) || ($hotmart_prod == $hotmart_id_test)) {
+if ($hottok == $hotmart_token) {
   switch ($status) {
     case 'approved':
       // Campos a enviar para a lahar
     $campos = array(
-        'email_contato' => $hotmart_mail
-        'tags' => 'Hotmart - Aprovado'
+        'nome_contato' => $hotmart_first_name.' '.$hotmart_last_name,
+        'email_contato' => $hotmart_mail,
+        'tags' => 'Hotmart '.$hotmart_prod_nome.' Aprovado'
       );
-      integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campos)
+      integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campos);
       break;
-
     case 'refunded':
     case 'chargeback':
     case 'dispute':
     // Campos a enviar para a lahar
     $campos = array(
-        'email_contato' => $hotmart_mail
-        'tags' => 'Hotmart - Cancelado'
+        'nome_contato' => $hotmart_first_name.' '.$hotmart_last_name,
+        'email_contato' => $hotmart_mail,
+        'tags' => 'Hotmart '.$hotmart_prod_nome.' Cancelado'
       );
-      integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campos)
+      integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campos);
       break;
-
     default:
       log_message("Status não tratado: $status");
       break;
@@ -58,10 +55,9 @@ else
 {
   log_message("Chamada inválida - Acesso não liberado");
 }
-
-
 // API da LAHAR
 function integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campos) {
+
   $endpoint_full_url = 'https://app.lahar.com.br/api/'.$endpoint;
   if ($endpoint == 'conversions') {
     $method = 'POST';
@@ -88,6 +84,7 @@ function integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campo
     else if ($campos['url_origem'] == NULL) {
       $campos['url_origem'] = 'integracao-javascript';
     }
+
     $post_fields = http_build_query($campos);
     if ($method == 'POST') {
       $ch = curl_init($endpoint_full_url);
@@ -127,13 +124,10 @@ function integra_api_lahar($token_api_lahar, $endpoint, $nome_formulario, $campo
   }
   return $retorno;
 }
-
 function log_message($message) {
   $log_file = './hotmautic.log';
-
   $current_date = date('r');
   $log_messsage = "$current_date - $message\n";
-
   echo($log_messsage);
   file_put_contents($log_file, $log_messsage, FILE_APPEND);
 }
